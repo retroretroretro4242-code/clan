@@ -1,2 +1,1 @@
-discord.py==2.3.2
-python-dotenv==0.21.1
+bot.py==2.3.2
