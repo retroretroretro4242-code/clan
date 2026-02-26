@@ -13,39 +13,42 @@ intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Kanal ID'leri
-ISTEK_KANAL_ID = 1476496120258629709  # Başvuru Kanalı
-PARTNER_KANAL_ID = 1476496120258629710  # Partner Bekleme Kanalı
-PARTNER_BASVURU_KANAL_ID = 1476579700775190859  # Partner Başvuru Kanalı
-ONAY_KANAL_ID = 1476579074301366292  # Başvuru Onay Kanalı
-EKIP_ALIM_KANAL_ID = 1476579896305254551  # Ekip Alım Kanalı
+ISTEK_KANAL_ID = 1475095722864017478
+PARTNER_BASVURU_KANAL_ID = 1476579700775190859
+PARTNER_ONAY_KANAL_ID = 1476579800419143781
+EKIP_ALIM_KANAL_ID = 1476579896305254551
+KATEGORI_ID = 1474830960393453619  # Klan kategorisi ID
 
 # Yetkili rollerin ID'lerini belirliyoruz
 YETKILI_ROLLER = [
-    1476496118157283431,  # Yetkili rolü 1
-    1476496118119399575,  # Yetkili rolü 2
-    1476496118119399572,  # Yetkili rolü 3
-    1476496118119399569   # Yetkili rolü 4
+    1476496118157283431,
+    1476496118119399575,
+    1476496118119399572,
+    1476496118119399569
 ]
 
-# ✅ Klan Alım Modal
-class KlanAlimModal(discord.ui.Modal, title="Klan Alım Formu"):
+# ✅ Partner Başvuru Modal
+class PartnerBasvuruModal(discord.ui.Modal, title="Partner Başvuru Formu"):
     isim = discord.ui.TextInput(label="İsim")
     aciklama = discord.ui.TextInput(label="Açıklama", style=discord.TextStyle.paragraph)
-    deneyim = discord.ui.TextInput(label="Minecraft Deneyimi (Yıl)", placeholder="Örneğin: 2 yıl")
-    
+    sunucu_uyelik = discord.ui.TextInput(label="Sunucu Üyelik (Sayı)", placeholder="Örneğin: 1500")
+    sunucu_link = discord.ui.TextInput(label="Sunucu Linki", placeholder="https://")
+
     async def on_submit(self, interaction: discord.Interaction):
         try:
-            deneyim = int(self.deneyim.value)
+            sunucu_uyelik = int(self.sunucu_uyelik.value)  # Sayıya dönüştürme
         except ValueError:
-            await interaction.response.send_message("Geçerli bir yıl bilgisi girin!", ephemeral=True)
+            await interaction.response.send_message("Sunucu üyelik sayısını geçerli bir sayı olarak girmeniz gerekiyor!", ephemeral=True)
             return
 
-        embed = discord.Embed(title="🛡️ Klan Alımı", color=0x2ecc71)
+        embed = discord.Embed(title="🤝 Partner Başvurusu", color=0x2ecc71)
         embed.add_field(name="İsim", value=self.isim.value, inline=False)
         embed.add_field(name="Açıklama", value=self.aciklama.value, inline=False)
-        embed.add_field(name="Minecraft Deneyimi", value=str(deneyim), inline=False)
+        embed.add_field(name="Sunucu Üyelik", value=str(sunucu_uyelik), inline=False)
+        embed.add_field(name="Sunucu Linki", value=self.sunucu_link.value, inline=False)
 
-        channel = bot.get_channel(EKIP_ALIM_KANAL_ID)
+        # Başvuru bilgilerini partner başvuru kanalına gönder
+        channel = bot.get_channel(PARTNER_BASVURU_KANAL_ID)
         if channel:
             # Onay ve Red butonları ekleniyor
             view = discord.ui.View()
@@ -58,95 +61,91 @@ class KlanAlimModal(discord.ui.Modal, title="Klan Alım Formu"):
 
         await interaction.response.send_message("Başvurunuz alındı ve onay için yetkililere iletildi.", ephemeral=True)
 
-# ✅ Yetkili Alım Modal
-class YetkiliAlimModal(discord.ui.Modal, title="Yetkili Alım Formu"):
+# ✅ Onay ve Red butonlarının işleyişi
+@bot.event
+async def on_interaction(interaction: discord.Interaction):
+    if interaction.type == discord.InteractionType.component:
+        if interaction.data["custom_id"] == "onay":
+            # Onaylandığında partner başvurusu bilgilerini Partner Onay kanalına gönder
+            embed = discord.Embed(title="✅ Partner Başvurusu Onaylandı", color=0x2ecc71)
+            embed.add_field(name="İsim", value=interaction.message.embeds[0].fields[0].value, inline=False)
+            embed.add_field(name="Açıklama", value=interaction.message.embeds[0].fields[1].value, inline=False)
+            embed.add_field(name="Sunucu Üyelik", value=interaction.message.embeds[0].fields[2].value, inline=False)
+            embed.add_field(name="Sunucu Linki", value=interaction.message.embeds[0].fields[3].value, inline=False)
+            channel = bot.get_channel(PARTNER_ONAY_KANAL_ID)
+            if channel:
+                await channel.send(embed=embed)
+            await interaction.response.send_message("Başvuru onaylandı ve ilgili kanala gönderildi.", ephemeral=True)
+
+        elif interaction.data["custom_id"] == "red":
+            # Başvuru reddedildiğinde kullanıcıya mesaj gönder
+            await interaction.response.send_message("Başvuru reddedildi.", ephemeral=True)
+
+# ✅ Slash Komutlar
+@bot.tree.command(name="partnerbasvurusu")
+async def partnerbasvurusu(interaction: discord.Interaction):
+    await interaction.response.send_modal(PartnerBasvuruModal())
+
+# ✅ Ekip Alım ve Klan Alım
+class AlimModal(discord.ui.Modal, title="Ekip / Klan Alım Formu"):
     isim = discord.ui.TextInput(label="İsim")
     aciklama = discord.ui.TextInput(label="Açıklama", style=discord.TextStyle.paragraph)
-    deneyim = discord.ui.TextInput(label="Deneyim (Yıl)", placeholder="Örneğin: 2 yıl")
-    
+    deneyim = discord.ui.TextInput(label="Minecraft Deneyimi (Yıl)", placeholder="Örneğin: 2 yıl")
+
     async def on_submit(self, interaction: discord.Interaction):
         try:
             deneyim = int(self.deneyim.value)
         except ValueError:
             await interaction.response.send_message("Geçerli bir yıl bilgisi girin!", ephemeral=True)
             return
-
-        embed = discord.Embed(title="🛡️ Yetkili Alımı", color=0x2ecc71)
+        
+        embed = discord.Embed(title="🛡️ Klan/Ekip Alım Başvurusu", color=0x2ecc71)
         embed.add_field(name="İsim", value=self.isim.value, inline=False)
         embed.add_field(name="Açıklama", value=self.aciklama.value, inline=False)
-        embed.add_field(name="Deneyim", value=str(deneyim), inline=False)
+        embed.add_field(name="Minecraft Deneyimi", value=str(deneyim), inline=False)
 
-        channel = bot.get_channel(ONAY_KANAL_ID)
+        # Başvuru bilgilerini ekip alım kanalı veya başka bir kanal gönderebilirsiniz
+        channel = bot.get_channel(EKIP_ALIM_KANAL_ID)
         if channel:
-            # Onay ve Red butonları ekleniyor
-            view = discord.ui.View()
-            onay_button = discord.ui.Button(label="Onayla", style=discord.ButtonStyle.green, custom_id="onay")
-            red_button = discord.ui.Button(label="Reddet", style=discord.ButtonStyle.red, custom_id="red")
-            view.add_item(onay_button)
-            view.add_item(red_button)
+            await channel.send(embed=embed)
 
-            await channel.send(embed=embed, view=view)
+        await interaction.response.send_message("Başvurunuz alındı ve yetkililere iletildi.", ephemeral=True)
 
-        await interaction.response.send_message("Yetkili başvurusu alındı ve onay için yetkililere iletildi.", ephemeral=True)
+@bot.tree.command(name="ekipalimi")
+async def ekip_alim(interaction: discord.Interaction):
+    await interaction.response.send_modal(AlimModal())
 
-# ✅ Diğer Modal
-class DigerModal(discord.ui.Modal, title="Diğer Başvuru Formu"):
-    basvuru_turu = discord.ui.TextInput(label="Başvuru Türü")
-    detay = discord.ui.TextInput(label="Detaylı Açıklama", style=discord.TextStyle.paragraph)
+# ✅ Yetkili Alım
+class YetkiliAlimModal(discord.ui.Modal, title="Yetkili Alım Formu"):
+    isim = discord.ui.TextInput(label="İsim")
+    deneyim = discord.ui.TextInput(label="Yetkili Deneyimi (Yıl)", placeholder="Örneğin: 1 yıl")
 
     async def on_submit(self, interaction: discord.Interaction):
-        embed = discord.Embed(title="📝 Diğer Başvuru", color=0x3498db)
-        embed.add_field(name="Başvuru Türü", value=self.basvuru_turu.value, inline=False)
-        embed.add_field(name="Detaylı Açıklama", value=self.detay.value, inline=False)
-        await interaction.response.send_message(embed=embed)
+        try:
+            deneyim = int(self.deneyim.value)
+        except ValueError:
+            await interaction.response.send_message("Geçerli bir yıl bilgisi girin!", ephemeral=True)
+            return
+        
+        embed = discord.Embed(title="👑 Yetkili Alım Başvurusu", color=0x2ecc71)
+        embed.add_field(name="İsim", value=self.isim.value, inline=False)
+        embed.add_field(name="Yetkili Deneyimi", value=str(deneyim), inline=False)
 
-# Yetkili kontrolü
-def kullanici_yetkili():
-    async def predicate(interaction: discord.Interaction):
-        return any(role.id in YETKILI_ROLLER for role in interaction.user.roles)
-    return app_commands.check(predicate)
+        # Başvuru bilgilerini yetkili alım kanalına gönder
+        channel = bot.get_channel(EKIP_ALIM_KANAL_ID)
+        if channel:
+            await channel.send(embed=embed)
 
-# Kanal kontrolü (klanın başvuru ve yetkili alımı için)
-def kanal_check(kanal_id):
-    async def predicate(interaction: discord.Interaction):
-        return interaction.channel.id == kanal_id
-    return app_commands.check(predicate)
+        await interaction.response.send_message("Başvurunuz alındı ve yetkililere iletildi.", ephemeral=True)
+
+@bot.tree.command(name="yetkilialimi")
+async def yetkili_alim(interaction: discord.Interaction):
+    await interaction.response.send_modal(YetkiliAlimModal())
 
 @bot.event
 async def on_ready():
     print(f"Bot hazır: {bot.user}")
     await bot.tree.sync()  # Komutları senkronize et
     print("Komutlar senkronize edildi.")
-
-# Onay ve Red butonlarının işleyişi
-@bot.event
-async def on_interaction(interaction: discord.Interaction):
-    if interaction.type == discord.InteractionType.component:
-        if interaction.data["custom_id"] == "onay":
-            embed = discord.Embed(title="✅ Başvuru Onaylandı", color=0x2ecc71)
-            embed.add_field(name="İsim", value=interaction.message.embeds[0].fields[0].value, inline=False)
-            embed.add_field(name="Açıklama", value=interaction.message.embeds[0].fields[1].value, inline=False)
-            embed.add_field(name="Minecraft Deneyimi / Deneyim", value=interaction.message.embeds[0].fields[2].value, inline=False)
-            channel = bot.get_channel(ONAY_KANAL_ID)
-            if channel:
-                await channel.send(embed=embed)
-            await interaction.response.send_message("Başvuru onaylandı ve ilgili kanala gönderildi.", ephemeral=True)
-
-        elif interaction.data["custom_id"] == "red":
-            await interaction.response.send_message("Başvuru reddedildi.", ephemeral=True)
-
-# ✅ Slash Komutlar
-@bot.tree.command(name="klanbasvurusu")
-async def klanbasvurusu(interaction: discord.Interaction):
-    await interaction.response.send_modal(KlanAlimModal())
-
-@bot.tree.command(name="yetkili_alimi")
-@kullanici_yetkili()
-async def yetkili_alimi(interaction: discord.Interaction):
-    await interaction.response.send_modal(YetkiliAlimModal())
-
-@bot.tree.command(name="diger")
-async def diger(interaction: discord.Interaction):
-    await interaction.response.send_modal(DigerModal())
 
 bot.run(TOKEN)
