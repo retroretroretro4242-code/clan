@@ -137,6 +137,11 @@ class YetkiliAlimModal(discord.ui.Modal, title="Yetkili Alım Formu"):
 async def yetkili_alim(interaction: discord.Interaction):
     await interaction.response.send_modal(YetkiliAlimModal())
 
+# ✅ Partner Başvurusu Slash Komutu
+@bot.tree.command(name="partnerbasvurusu")
+async def partnerbasvurusu(interaction: discord.Interaction):
+    await interaction.response.send_modal(PartnerBasvuruModal())
+
 @bot.event
 async def on_ready():
     print(f"Bot hazır: {bot.user}")
