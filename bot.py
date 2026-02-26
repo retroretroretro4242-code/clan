@@ -15,7 +15,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # Kanal ID'leri
 ISTEK_KANAL_ID = 1475095722864017478
 PARTNER_BASVURU_KANAL_ID = 1476579700775190859
-PARTNER_ONAY_KANAL_ID = 1476579800419143781
+PARTNER_ONAY_KANAL_ID = 1476496120258629710  # Partner başvuru onay kanalı
 EKIP_ALIM_KANAL_ID = 1476579896305254551
 KATEGORI_ID = 1474830960393453619  # Klan kategorisi ID
 
@@ -80,11 +80,6 @@ async def on_interaction(interaction: discord.Interaction):
         elif interaction.data["custom_id"] == "red":
             # Başvuru reddedildiğinde kullanıcıya mesaj gönder
             await interaction.response.send_message("Başvuru reddedildi.", ephemeral=True)
-
-# ✅ Slash Komutlar
-@bot.tree.command(name="partnerbasvurusu")
-async def partnerbasvurusu(interaction: discord.Interaction):
-    await interaction.response.send_modal(PartnerBasvuruModal())
 
 # ✅ Ekip Alım ve Klan Alım
 class AlimModal(discord.ui.Modal, title="Ekip / Klan Alım Formu"):
