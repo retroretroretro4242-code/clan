@@ -1,2 +1,2 @@
 #!/bin/bash
-python discord.py
+python3 discord.py
