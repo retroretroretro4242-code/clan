@@ -29,7 +29,7 @@ YETKILI_ROLLER = [
 
 # ✅ Klan Alım Modal
 class KlanAlimModal(discord.ui.Modal, title="Klan Alım Formu"):
-    klan_isim = discord.ui.TextInput(label="Klan İsmi")
+    isim = discord.ui.TextInput(label="İsim")
     aciklama = discord.ui.TextInput(label="Açıklama", style=discord.TextStyle.paragraph)
     deneyim = discord.ui.TextInput(label="Minecraft Deneyimi (Yıl)", placeholder="Örneğin: 2 yıl")
     
@@ -41,19 +41,26 @@ class KlanAlimModal(discord.ui.Modal, title="Klan Alım Formu"):
             return
 
         embed = discord.Embed(title="🛡️ Klan Alımı", color=0x2ecc71)
-        embed.add_field(name="Klan İsmi", value=self.klan_isim.value, inline=False)
+        embed.add_field(name="İsim", value=self.isim.value, inline=False)
         embed.add_field(name="Açıklama", value=self.aciklama.value, inline=False)
         embed.add_field(name="Minecraft Deneyimi", value=str(deneyim), inline=False)
 
         channel = bot.get_channel(EKIP_ALIM_KANAL_ID)
         if channel:
-            await channel.send(embed=embed)
+            # Onay ve Red butonları ekleniyor
+            view = discord.ui.View()
+            onay_button = discord.ui.Button(label="Onayla", style=discord.ButtonStyle.green, custom_id="onay")
+            red_button = discord.ui.Button(label="Reddet", style=discord.ButtonStyle.red, custom_id="red")
+            view.add_item(onay_button)
+            view.add_item(red_button)
+
+            await channel.send(embed=embed, view=view)
 
         await interaction.response.send_message("Başvurunuz alındı ve onay için yetkililere iletildi.", ephemeral=True)
 
 # ✅ Yetkili Alım Modal
 class YetkiliAlimModal(discord.ui.Modal, title="Yetkili Alım Formu"):
-    yetkili_isim = discord.ui.TextInput(label="Yetkili İsmi")
+    isim = discord.ui.TextInput(label="İsim")
     aciklama = discord.ui.TextInput(label="Açıklama", style=discord.TextStyle.paragraph)
     deneyim = discord.ui.TextInput(label="Deneyim (Yıl)", placeholder="Örneğin: 2 yıl")
     
@@ -65,13 +72,20 @@ class YetkiliAlimModal(discord.ui.Modal, title="Yetkili Alım Formu"):
             return
 
         embed = discord.Embed(title="🛡️ Yetkili Alımı", color=0x2ecc71)
-        embed.add_field(name="Yetkili İsmi", value=self.yetkili_isim.value, inline=False)
+        embed.add_field(name="İsim", value=self.isim.value, inline=False)
         embed.add_field(name="Açıklama", value=self.aciklama.value, inline=False)
         embed.add_field(name="Deneyim", value=str(deneyim), inline=False)
 
         channel = bot.get_channel(ONAY_KANAL_ID)
         if channel:
-            await channel.send(embed=embed)
+            # Onay ve Red butonları ekleniyor
+            view = discord.ui.View()
+            onay_button = discord.ui.Button(label="Onayla", style=discord.ButtonStyle.green, custom_id="onay")
+            red_button = discord.ui.Button(label="Reddet", style=discord.ButtonStyle.red, custom_id="red")
+            view.add_item(onay_button)
+            view.add_item(red_button)
+
+            await channel.send(embed=embed, view=view)
 
         await interaction.response.send_message("Yetkili başvurusu alındı ve onay için yetkililere iletildi.", ephemeral=True)
 
@@ -109,10 +123,10 @@ async def on_ready():
 async def on_interaction(interaction: discord.Interaction):
     if interaction.type == discord.InteractionType.component:
         if interaction.data["custom_id"] == "onay":
-            embed = discord.Embed(title="✅ Klan Başvurusu Onaylandı", color=0x2ecc71)
-            embed.add_field(name="Klan İsmi", value=interaction.message.embeds[0].fields[0].value, inline=False)
+            embed = discord.Embed(title="✅ Başvuru Onaylandı", color=0x2ecc71)
+            embed.add_field(name="İsim", value=interaction.message.embeds[0].fields[0].value, inline=False)
             embed.add_field(name="Açıklama", value=interaction.message.embeds[0].fields[1].value, inline=False)
-            embed.add_field(name="Minecraft Deneyimi", value=interaction.message.embeds[0].fields[2].value, inline=False)
+            embed.add_field(name="Minecraft Deneyimi / Deneyim", value=interaction.message.embeds[0].fields[2].value, inline=False)
             channel = bot.get_channel(ONAY_KANAL_ID)
             if channel:
                 await channel.send(embed=embed)
