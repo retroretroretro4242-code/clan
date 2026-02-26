@@ -4,13 +4,18 @@ from discord.ui import View, Select
 import os
 from dotenv import load_dotenv
 
+# .env dosyasını yükleyelim
 load_dotenv()
 
+# Token'ı .env dosyasından alıyoruz
 TOKEN = os.getenv("TOKEN")
 
+# Intents ayarları
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
+
+# Botu oluşturuyoruz
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Kanal ID'leri
@@ -97,6 +102,10 @@ class TicketView(View):
 async def on_ready():
     print(f"Bot hazır: {bot.user}")
 
+    # Komutları Discord'a kaydet
+    await bot.tree.sync()
+    print("Komutlar başarıyla kaydedildi.")
+
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def panel(ctx):
@@ -115,4 +124,22 @@ async def panel(ctx):
 async def partnerbasvurusu(interaction: discord.Interaction):
     await interaction.response.send_modal(PartnerBasvuruModal())
 
+# Ekip alım komutu
+@bot.tree.command(name="ekipalimi")
+async def ekip_alimi(interaction: discord.Interaction):
+    await interaction.response.send_message("Ekip alımı başvurusu aktif.")
+
+# Yardım komutu
+@bot.tree.command(name="yardim")
+async def yardim(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="Yardım Menüsü",
+        description="Aşağıdaki komutları kullanarak botu kontrol edebilirsiniz:",
+        color=0x3498db
+    )
+    embed.add_field(name="/ekipalimi", value="Ekip alımı başvurusunu görüntüler.", inline=False)
+    embed.add_field(name="/partnerbasvurusu", value="Partner başvuru formunu açar.", inline=False)
+    await interaction.response.send_message(embed=embed)
+
+# Botu çalıştırıyoruz
 bot.run(TOKEN)
