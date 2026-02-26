@@ -1,1 +1,1 @@
-web: python discord.py
+web: python bot.py
